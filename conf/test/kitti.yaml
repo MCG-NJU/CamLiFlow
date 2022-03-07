@@ -1,0 +1,40 @@
+# @package _global_
+testset:
+  name: kitti
+  root_dir: datasets/kitti_scene_flow
+  split: testing200
+  n_workers: 8
+  disp_provider: ganet
+  max_depth: 90
+  n_points: 8192
+  augmentation:
+    enabled: false
+
+model:
+  batch_size: 4
+  freeze_bn: false
+  ids:
+    enabled: true
+    sensor_size_divisor: 32
+  pwc2d:
+    norm:
+      feature_pyramid: batch_norm
+      flow_estimator: null
+      context_network: null
+    max_displacement: 4
+  pwc3d:
+    norm:
+      feature_pyramid: batch_norm
+      correlation: null
+      flow_estimator: null
+    k: 16
+  loss2d:
+    level_weights: [8, 4, 2, 1, 0.5]
+    order: l1
+  loss3d:
+    level_weights: [8, 4, 2, 1, 0.5]
+    order: l1
+
+ckpt:
+  path: null
+  strict: true
