@@ -5,6 +5,7 @@ import logging
 import numpy as np
 import torch.utils.data
 import torch.distributed as dist
+from matplotlib.colors import hsv_to_rgb
 
 
 def init_logging(filename=None, debug=False):
@@ -231,3 +232,20 @@ def project_pc2image(pc, image_h, image_w, f, cx=None, cy=None, clip=True):
             image_x[:, None],
             image_y[:, None]
         ], axis=-1)
+
+
+def viz_optical_flow(flow, max_flow=512):
+    n = 8
+    u, v = flow[:, :, 0], flow[:, :, 1]
+    mag = np.sqrt(np.square(u) + np.square(v))
+    angle = np.arctan2(v, u)
+
+    image_h = np.mod(angle / (2 * np.pi) + 1, 1)
+    image_s = np.clip(mag * n / max_flow, a_min=0, a_max=1)
+    image_v = np.ones_like(image_s)
+
+    image_hsv = np.stack([image_h, image_s, image_v], axis=2)
+    image_rgb = hsv_to_rgb(image_hsv)
+    image_rgb = np.uint8(image_rgb * 255)
+
+    return image_rgb

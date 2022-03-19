@@ -64,7 +64,7 @@ def correlation2d(input1: torch.Tensor, input2: torch.Tensor, max_displacement: 
                 cost_volumes.append(cost_volume)
         return torch.cat(cost_volumes, 1)
 
-    if cpp_impl and callable(_correlation_forward_cuda) and callable(_correlation_backward_cuda):
+    if cpp_impl and callable(_correlation_forward_cuda) and callable(_correlation_backward_cuda) and input1.is_cuda and input2.is_cuda:
         input1 = input1.permute(0, 2, 3, 1).contiguous().float()
         input2 = input2.permute(0, 2, 3, 1).contiguous().float()
         return CorrelationFunction.apply(input1, input2, max_displacement)
@@ -121,7 +121,7 @@ def k_nearest_neighbor(input_xyz: torch.Tensor, query_xyz: torch.Tensor, k: int,
         input_xyz = input_xyz.transpose(1, 2).contiguous()
         query_xyz = query_xyz.transpose(1, 2).contiguous()
 
-    if cpp_impl and callable(_k_nearest_neighbor_cuda) and input_xyz.is_cuda:
+    if cpp_impl and callable(_k_nearest_neighbor_cuda) and input_xyz.is_cuda and query_xyz.is_cuda:
         return _k_nearest_neighbor_cuda(input_xyz.contiguous(), query_xyz.contiguous(), k)
     else:
         return _k_nearest_neighbor_py(input_xyz, query_xyz, k)

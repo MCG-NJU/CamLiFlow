@@ -53,6 +53,16 @@ python setup.py build_ext --inplace
 
 NG-RANSAC is also required if you want to evaluate on KITTI. Please follow [https://github.com/vislearn/ngransac](https://github.com/vislearn/ngransac) to install the library.
 
+## Demo
+
+First, download the pretrained weights [things.pt](https://drive.google.com/file/d/1gpERBftyqFoA0FPqGczfCXYfDW8B7VTN/view?usp=sharing) and save it to `checkpoints/things.pt`.
+
+Then, run the following script to launch a demo of estimating optical flow and scene flow from a pair of images and point clouds:
+
+```
+python demo.py --weights checkpoints/things.pt
+```
+
 ## Evaluation
 
 ### FlyingThings3D
