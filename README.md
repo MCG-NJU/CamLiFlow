@@ -1,6 +1,6 @@
 # CamLiFlow
 
-This is the official PyTorch implementation for paper ["CamLiFlow: Bidirectional Camera-LiDAR Fusion for Joint Optical Flow and Scene Flow Estimation"](https://arxiv.org/abs/2111.10502). (CVPR 2022)
+This is the official PyTorch implementation for paper [CamLiFlow: Bidirectional Camera-LiDAR Fusion for Joint Optical Flow and Scene Flow Estimation](https://arxiv.org/abs/2111.10502). (CVPR 2022)
 
 ![](asserts/arch.png)
 
@@ -9,7 +9,7 @@ This is the official PyTorch implementation for paper ["CamLiFlow: Bidirectional
 * 2022-03-07: We release the code and the pretrained weights.
 * 2022-03-03: Our paper is accepted by CVPR 2022.
 * 2021-11-20: Our paper is available at [https://arxiv.org/abs/2111.10502](https://arxiv.org/abs/2111.10502)
-* 2021-11-04: Our method ranked #1 on the leaderboard of [KITTI Scene Flow](http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php).
+* 2021-11-04: Our method ranked **first** on the leaderboard of [KITTI Scene Flow](http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php).
 
 ## Pretrained Weights
 
