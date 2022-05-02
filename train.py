@@ -213,12 +213,15 @@ if __name__ == '__main__':
                         help='Path to the configuration (YAML format)')
     parser.add_argument('--weights', required=False, default=None,
                         help='Path to pretrained weights')
+    parser.add_argument('--resume', required=False, action='store_true',
+                        help='Resume unfinished training')
     args = parser.parse_args()
 
     # load config
     with open(args.config, encoding='utf-8') as f:
         cfgs = DictConfig(yaml.load(f, Loader=yaml.FullLoader))
         cfgs.ckpt.path = args.weights
+        cfgs.ckpt.resume = args.resume
 
     # set num_workers of data loader
     n_devices = max(torch.cuda.device_count(), 1)
@@ -226,11 +229,11 @@ if __name__ == '__main__':
     cfgs.valset.n_workers = min(os.cpu_count(), cfgs.valset.n_workers * n_devices)
 
     # create log dir
-    if os.path.exists(cfgs.log.dir):
+    if os.path.exists(cfgs.log.dir) and not cfgs.ckpt.resume:
         if input('Run "%s" already exists, overwrite it? [Y/n] ' % cfgs.log.run_name) == 'n':
             exit(0)
         shutil.rmtree(cfgs.log.dir, ignore_errors=True)
-    os.makedirs(cfgs.log.dir, exist_ok=False)
+    os.makedirs(cfgs.log.dir, exist_ok=True)
 
     # create trainers
     if torch.cuda.device_count() == 0:  # CPU
