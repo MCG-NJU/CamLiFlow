@@ -4,6 +4,19 @@ This is the official PyTorch implementation for paper [CamLiFlow: Bidirectional 
 
 ![](asserts/arch.png)
 
+If you find CamLiFlow useful in your research, please cite:
+
+```
+@InProceedings{Liu_2022_CVPR,
+    author    = {Liu, Haisong and Lu, Tao and Xu, Yihui and Liu, Jia and Li, Wenjie and Chen, Lijun},
+    title     = {CamLiFlow: Bidirectional Camera-LiDAR Fusion for Joint Optical Flow and Scene Flow Estimation},
+    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+    month     = {June},
+    year      = {2022},
+    pages     = {5791-5801}
+}
+```
+
 ## News
 
 * 2022-03-29: Our paper is selected for an **oral** presentation. 
