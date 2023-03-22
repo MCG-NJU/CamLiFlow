@@ -1,11 +1,118 @@
 import re
+import os
 import cv2
 import sys
+import smtplib
 import logging
 import numpy as np
+import torch
 import torch.utils.data
 import torch.distributed as dist
-from matplotlib.colors import hsv_to_rgb
+from tqdm import tqdm
+from email.mime.text import MIMEText
+from omegaconf import DictConfig
+
+
+class _RepeatSampler(object):
+    def __init__(self, sampler):
+        self.sampler = sampler
+
+    def __iter__(self):
+        while True:
+            yield from iter(self.sampler)
+
+
+class FastDataLoader(torch.utils.data.dataloader.DataLoader):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        object.__setattr__(self, 'batch_sampler', _RepeatSampler(self.batch_sampler))
+        self.iterator = super().__iter__()
+
+    def __len__(self):
+        return len(self.batch_sampler.sampler)
+
+    def __iter__(self):
+        for i in range(len(self)):
+            yield next(self.iterator)
+
+
+class BadLossChecker:
+    def __init__(self, cfgs):
+        self.cfgs = cfgs
+        self.bad_steps = 0
+
+    def check(self, loss):
+        if not self.cfgs.enabled:
+            return False
+
+        if loss.isnan() or loss.isinf() or loss.item() > self.cfgs.threshold:
+            self.bad_steps += 1
+            if self.bad_steps == self.cfgs.max_bad_steps:
+                self.bad_steps = 0
+                return True
+        else:
+            self.bad_steps = 0
+
+        return False
+
+
+def check_gpu_availability():
+    try:
+        import pynvml  # type: ignore[import]
+    except ModuleNotFoundError:
+        return("pynvml module not found, please install pynvml")
+
+    from pynvml import NVMLError_DriverNotLoaded
+
+    try:
+        pynvml.nvmlInit()
+    except NVMLError_DriverNotLoaded:
+        return ("cuda driver can't be loaded, is cuda enabled?")
+
+    n_gpus = pynvml.nvmlDeviceGetCount()
+
+    for i in range(n_gpus):
+        handle = pynvml.nvmlDeviceGetHandleByIndex(i)
+        procs = pynvml.nvmlDeviceGetComputeRunningProcesses(handle)
+        pids = [p.pid for p in procs]
+        if os.getpid() in pids and len(pids) > 1:
+            return False
+
+    return True
+
+
+def get_grad_norm(model, prefix, norm_type: float = 2.0):
+    parameters = [p for n, p in model.named_parameters() if n.startswith(prefix)]
+    parameters = [p for p in parameters if p.grad is not None]
+    norm_type = float(norm_type)
+    if len(parameters) == 0:
+        return torch.tensor(0.)
+    device = parameters[0].grad.device
+    param_norm = [torch.norm(p.grad.detach(), norm_type).to(device) for p in parameters]
+    total_norm = torch.norm(torch.stack(param_norm), norm_type)
+    return total_norm
+
+
+def get_max_memory(device, n_gpus):
+    mem = torch.cuda.max_memory_allocated(device=device)
+    mem_mb = torch.tensor([mem / (1024 * 1024)], dtype=torch.int, device=device)
+    if n_gpus > 1:
+        dist.reduce(mem_mb, 0, op=dist.ReduceOp.MAX)
+    return mem_mb.item()
+
+
+def send_mail(sender, receivers, subject, content):
+    message = MIMEText(content, 'plain', 'utf-8')
+    message['From'] = sender
+    message['To'] = ','.join(receivers)
+    message['Subject'] = subject
+
+    try:
+        smtp_obj = smtplib.SMTP('localhost', 25)
+        smtp_obj.sendmail('', receivers, message.as_string())
+        logging.info("Mail sent successfully!")
+    except smtplib.SMTPException as e:
+        logging.error("An exception occurs! Failed to send mail!", e)
 
 
 def init_logging(filename=None, debug=False):
@@ -37,8 +144,6 @@ def copy_to_device(inputs, device, non_blocking=True):
         inputs = {k: copy_to_device(v, device, non_blocking) for k, v in inputs.items()}
     elif isinstance(inputs, torch.Tensor):
         inputs = inputs.to(device=device, non_blocking=non_blocking)
-    else:
-        raise TypeError('Unknown type: %s' % str(type(inputs)))
     return inputs
 
 
@@ -51,6 +156,27 @@ def size_of_batch(inputs):
         return inputs.shape[0]
     else:
         raise TypeError('Unknown type: %s' % str(type(inputs)))
+
+
+def override_cfgs(dst: DictConfig, src: DictConfig):
+    for key in src:
+        if isinstance(src[key], DictConfig):
+            dst[key] = override_cfgs(dst[key], src[key])
+        else:
+            dst[key] = src[key]
+    return dst
+
+
+def eat_all_ram(device, reserved=1024):
+    num = int(torch.cuda.get_device_properties(0).total_memory / 1024 / 1024) - reserved
+    cache = torch.rand([num, 1024, 256], dtype=torch.float32)
+    while True:
+        try:
+            cache[:num, ...].to(device)
+            del cache
+            break
+        except RuntimeError:
+            num -= reserved
 
 
 def load_fpm(filename):
@@ -232,20 +358,3 @@ def project_pc2image(pc, image_h, image_w, f, cx=None, cy=None, clip=True):
             image_x[:, None],
             image_y[:, None]
         ], axis=-1)
-
-
-def viz_optical_flow(flow, max_flow=512):
-    n = 8
-    u, v = flow[:, :, 0], flow[:, :, 1]
-    mag = np.sqrt(np.square(u) + np.square(v))
-    angle = np.arctan2(v, u)
-
-    image_h = np.mod(angle / (2 * np.pi) + 1, 1)
-    image_s = np.clip(mag * n / max_flow, a_min=0, a_max=1)
-    image_v = np.ones_like(image_s)
-
-    image_hsv = np.stack([image_h, image_s, image_v], axis=2)
-    image_rgb = hsv_to_rgb(image_hsv)
-    image_rgb = np.uint8(image_rgb * 255)
-
-    return image_rgb

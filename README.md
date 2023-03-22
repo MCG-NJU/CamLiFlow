@@ -1,24 +1,28 @@
-# CamLiFlow
+# CamLiFlow & CamLiRAFT
 
-This is the official PyTorch implementation for paper [CamLiFlow: Bidirectional Camera-LiDAR Fusion for Joint Optical Flow and Scene Flow Estimation](https://arxiv.org/abs/2111.10502). (CVPR 2022 Oral)
+This is the official PyTorch implementation for our two papers: 
 
-![](asserts/arch.png)
+* Conference version: [CamLiFlow: Bidirectional Camera-LiDAR Fusion for Joint Optical Flow and Scene Flow Estimation](https://arxiv.org/abs/2111.10502). (CVPR 2022 Oral)
 
-If you find CamLiFlow useful in your research, please cite:
+* Extended version (CamLiRAFT): [Learning Optical Flow and Scene Flow with Bidirectional Camera-LiDAR Fusion](https://arxiv.org/abs/2303.12017). (arXiv 2023)
 
-```
-@InProceedings{Liu_2022_CVPR,
-    author    = {Liu, Haisong and Lu, Tao and Xu, Yihui and Liu, Jia and Li, Wenjie and Chen, Lijun},
-    title     = {CamLiFlow: Bidirectional Camera-LiDAR Fusion for Joint Optical Flow and Scene Flow Estimation},
-    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-    month     = {June},
-    year      = {2022},
-    pages     = {5791-5801}
-}
-```
+![](asserts/banner.jpg)
+
+## Changes to the Conference Paper
+
+In this extended version, we instantiate a new type of the bidirectional fusion pipeline, the **CamLiRAFT** based on the recurrent all-pairs field transforms. CamLiRAFT obtains significant performance improvements over the original PWC-based CamLiFlow and sets a new state-of-the-art record on various datasets.
+
+* **Comparison with stereo scene flow methods**:  On FlyingThings3D, CamLiRAFT achieves 1.73 EPE2D and 0.049 EPE3D, 21\% and 20\% lower error compared to CamLiFlow. On KITTI, even the non-rigid CamLiRAFT performs on par with the previous state-of-the-art method RigidMask (SF-all: 4.97\% vs. 4.89\%). By refining the background scene flow with rigid priors, CamLiRAFT further achieves an error of 4.26\%, ranking **first** on the [leaderboard](http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php).
+
+* **Comparison with LiDAR-only scene flow methods**: The LiDAR-only variant of our method, dubbed CamLiRAFT-L, also outperforms all previous LiDAR-only scene flow methods in terms of both accuracy and speed (see Tab. 5 in the paper). Thus, CamLiRAFT-L can also serve as a strong baseline for LiDAR-only scene flow estimation.
+
+* **Comparison on MPI Sintel**: Without finetuning on Sintel, CamLiRAFT achieves 2.38 AEPE on the final pass of the Sintel training set, reducing the error by 12% and 18% over RAFT and RAFT-3D respectively. This demonstrates that our method has good generalization performance and can handle non-rigid motion.
+
+* **Training schedule**: The original CamLiFlow requires a complicated training schedule of Things (L2 loss) -> Things (Robust loss) -> Driving -> KITTI and takes about 10 days to train. CamLiRAFT simplifies the schedule to Things -> KITTI, and the training only takes about 3 days. (Tested on 4x RTX 3090 GPUs)
 
 ## News
 
+* 2023-03-22: We release CamLiRAFT, an extended version of CamLiFlow on [https://arxiv.org/abs/2303.12017](https://arxiv.org/abs/2303.12017).
 * 2022-03-29: Our paper is selected for an **oral** presentation. 
 * 2022-03-07: We release the code and the pretrained weights.
 * 2022-03-03: Our paper is accepted by **CVPR 2022**.
@@ -27,55 +31,63 @@ If you find CamLiFlow useful in your research, please cite:
 
 ## Pretrained Weights
 
-| Training Set | Weights |
-|--------------|---------|
-| FlyingThings3D | [things.pt](https://drive.google.com/file/d/1gpERBftyqFoA0FPqGczfCXYfDW8B7VTN/view?usp=sharing) |
-| FlyingThings3D -> Driving | [driving.pt](https://drive.google.com/file/d/1teNcu11xj_RUVI36DTvSKfCJzEYBWJmu/view?usp=sharing) |
-| FlyingThings3D -> Driving -> KITTI | [kitti.pt](https://drive.google.com/file/d/1JfKLJ8mSYDS7rp1Zv6UMsQkHhZgeJqa5/view?usp=sharing) |
+| Model | Training set | Weights |
+|-------|--------------|---------|
+| CamLiRAFT | Things (80e) | [camliraft_things80e.pt](https://drive.google.com/file/d/1nTh4Mugy5XltjcJHa7Byld2KIQ1IXrbm/view?usp=sharing) |
+| CamLiRAFT | Things (150e) | [camliraft_things150e.pt](https://drive.google.com/file/d/1BEuKy5WMbaABW5Wz-Gx879kcNJ2Zla2Z/view?usp=sharing) |
+| CamLiRAFT | Things (150e) -> KITTI (800e) | [camliraft_things150e_kitti800e.pt](https://drive.google.com/file/d/18rBJpy1Bero9dM6HfqKfdZqE4vpU84aD/view?usp=sharing) |
 
 ## Precomputed Results
 
-Here, we provide precomputed results for the submission to the online benchmark of [KITTI Scene Flow](http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php).
+Here, we provide precomputed results for the submission to the online benchmark of [KITTI Scene Flow](http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php). \* denotes refining the background scene flow with rigid priors.
 
-|  Rigidity  | D1-all | D2-all | Fl-all | SF-all | Link |
-|------------|--------|--------|--------|--------|------|
-|    None    | 1.81%  | 3.19%  | 4.05%  | 5.62%  | [camliflow-wo-refine.zip](https://drive.google.com/file/d/1zfH-uS9MxgZ8JZwUjNNHq7vASz1WD7SW/view?usp=sharing) |
-| Background | 1.81%  | 2.95%  | 3.10%  | 4.43%  | [camliflow.zip](https://drive.google.com/file/d/1qi7zxSmEDcCA1ChwVHv6_eyNSXVxez7x/view?usp=sharing) |
+|  Model  | D1-all | D2-all | Fl-all | SF-all | Link |
+|---------|--------|--------|--------|--------|------|
+| CamLiFlow    | 1.81%  | 3.19%  | 4.05%  | 5.62%  | [camliflow-wo-refine.zip](https://drive.google.com/file/d/1zfH-uS9MxgZ8JZwUjNNHq7vASz1WD7SW/view?usp=sharing) |
+| CamLiFlow \* | 1.81%  | 2.95%  | 3.10%  | 4.43%  | [camliflow.zip](https://drive.google.com/file/d/1qi7zxSmEDcCA1ChwVHv6_eyNSXVxez7x/view?usp=sharing) |
+| CamLiRAFT    | 1.81%  | 3.02%  | 3.43%  | 4.97%  | [camliraft-non-rigid.zip](https://drive.google.com/file/d/1H3x_OBRsVteDb7i5gaaY7cDc9ZQxUnZy/view?usp=sharing) |
+| CamLiRAFT \* | 1.81%  | 2.94%  | 2.96%  | 4.26%  | [camliraft.zip](https://drive.google.com/file/d/1mzL5vKIOg-boBgknaxssuaiGcqvUybrV/view?usp=sharing) |
 
 ## Environment
 
 Create a PyTorch environment using `conda`:
 
 ```
-conda create -n camliflow python=3.7
-conda activate camliflow
-conda install pytorch==1.10.2 torchvision==0.11.3 cudatoolkit=10.2 -c pytorch
+conda create -n camliraft python=3.7
+conda activate camliraft
+conda install pytorch==1.10.2 torchvision==0.11.3 cudatoolkit=11.3 -c pytorch
+```
+
+Install mmcv and mmdet:
+
+```
+pip install openmim
+mim install mmcv-full==1.4.0
+mim install mmdet==2.14.0
 ```
 
 Install other dependencies:
 
 ```
-pip install opencv-python open3d tensorboard omegaconf
+pip install opencv-python open3d tensorboard hydra-core==1.1.0
 ```
 
-Compile CUDA extensions for faster training and evaluation (optional):
+Compile CUDA extensions for faster training and evaluation:
 
 ```
 cd models/csrc
 python setup.py build_ext --inplace
 ```
 
+Download the ResNet-50 pretrained on ImageNet-1k:
+
+```
+wget https://download.pytorch.org/models/resnet50-11ad3fa6.pth
+mkdir pretrain
+mv resnet50-11ad3fa6.pth pretrain/
+```
+
 NG-RANSAC is also required if you want to evaluate on KITTI. Please follow [https://github.com/vislearn/ngransac](https://github.com/vislearn/ngransac) to install the library.
-
-## Demo
-
-First, download the pretrained weights [things.pt](https://drive.google.com/file/d/1gpERBftyqFoA0FPqGczfCXYfDW8B7VTN/view?usp=sharing) and save it to `checkpoints/things.pt`.
-
-Then, run the following script to launch a demo of estimating optical flow and scene flow from a pair of images and point clouds:
-
-```
-python demo.py --weights checkpoints/things.pt
-```
 
 ## Evaluation
 
@@ -87,12 +99,12 @@ First, download and preprocess the dataset (see `preprocess_flyingthings3d_subse
 python preprocess_flyingthings3d_subset.py --input_dir /mnt/data/flyingthings3d_subset
 ```
 
-Then, download the pretrained weights [things.pt](https://drive.google.com/file/d/1gpERBftyqFoA0FPqGczfCXYfDW8B7VTN/view?usp=sharing) and save it to `checkpoints/things.pt`.
+Then, download the pretrained weights [camliraft_things150e.pt](https://drive.google.com/file/d/1BEuKy5WMbaABW5Wz-Gx879kcNJ2Zla2Z/view?usp=sharing) and save it to `checkpoints/camliraft_things150e.pt`.
 
-To reproduce the results in Table 1 (see the main paper):
+Now you can reproduce the results in Table 2 (see the extended paper):
 
 ```
-python eval_things.py --weights checkpoints/things.pt
+python eval_things.py testset=flyingthings3d_subset model=camliraft ckpt.path=checkpoints/camliraft_things150e.pt
 ```
 
 ### KITTI
@@ -107,16 +119,16 @@ First, download the following parts:
 Unzip them and organize the directory as follows:
 
 ```
-/mnt/data/kitti_scene_flow
+datasets/kitti_scene_flow
 ├── testing
-│   ├── calib_cam_to_cam
-│   ├── calib_imu_to_velo
-│   ├── calib_velo_to_cam
-│   ├── disp_ganet
-│   ├── flow_occ
-│   ├── image_2
-│   ├── image_3
-│   ├── semantic_ddr
+│   ├── calib_cam_to_cam
+│   ├── calib_imu_to_velo
+│   ├── calib_velo_to_cam
+│   ├── disp_ganet
+│   ├── flow_occ
+│   ├── image_2
+│   ├── image_3
+│   ├── semantic_ddr
 └── training
     ├── calib_cam_to_cam
     ├── calib_imu_to_velo
@@ -131,21 +143,49 @@ Unzip them and organize the directory as follows:
     ├── semantic_ddr
 ```
 
-Then, download the pretrained weights [kitti.pt](https://drive.google.com/file/d/1JfKLJ8mSYDS7rp1Zv6UMsQkHhZgeJqa5/view?usp=sharing) and save it to `checkpoints/kitti.pt`.
+Then, download the pretrained weights [camliraft_things150e_kitti800e.pt](https://drive.google.com/file/d/18rBJpy1Bero9dM6HfqKfdZqE4vpU84aD/view?usp=sharing) and save it to `checkpoints/camliraft_things150e_kitti800e.pt`.
 
-To reproduce the results **without** rigid background refinement (SF-all: 5.62%):
-
-```
-python kitti_submission.py --weights checkpoints/kitti.pt
-```
-
-To reproduce the results **with** rigid background refinement (SF-all: 4.43%):
+To reproduce the results **without** leveraging rigid-body assumptions (SF-all: 4.97%):
 
 ```
-python kitti_submission.py --weights checkpoints/kitti.pt --refine
+python kitti_submission.py testset=kitti model=camliraft ckpt.path=checkpoints/camliraft_things150e_kitti800e.pt
 ```
 
-You should get the same results as the precomputed ones.
+To reproduce the results **with** rigid background refinement (SF-all: 4.26%), you need to further refine the background scene flow:
+
+```
+python refine_background.py
+```
+
+Results are saved to `submission/testing`. The initial non-rigid estimations are indicated by the `_initial` suffix.
+
+### Sintel
+
+First, download the flow dataset from: http://sintel.is.tue.mpg.de and the depth dataset from https://sintel-depth.csail.mit.edu/landing
+
+Unzip them and organize the directory as follows:
+
+```
+datasets/sintel
+├── depth
+│   ├── README_depth.txt
+│   ├── sdk
+│   └── training
+└── flow
+    ├── bundler
+    ├── flow_code
+    ├── README.txt
+    ├── test
+    └── training
+```
+
+Then, download the pretrained weights [camliraft_things80e.pt](https://drive.google.com/file/d/1nTh4Mugy5XltjcJHa7Byld2KIQ1IXrbm/view?usp=sharing) and save it to `checkpoints/camliraft_things80e.pt`.
+
+Now you can reproduce the results in Table 4 (see the extended paper):
+
+```
+python eval_sintel.py testset=sintel model=camliraft ckpt.path=checkpoints/camliraft_things80e.pt
+```
 
 ## Training
 
@@ -153,36 +193,41 @@ You should get the same results as the precomputed ones.
 
 > You need to preprocess the FlyingThings3D dataset before training (see `preprocess_flyingthings3d_subset.py` for detailed instructions).
 
-First, pretrain the model on FlyingThings3D with the L2-norm loss:
+Train CamLiRAFT on FlyingThings3D (150 epochs):
 
 ```
-python train.py --config conf/train/pretrain.yaml
+python train.py trainset=flyingthings3d_subset valset=flyingthings3d_subset model=camliraft
 ```
 
-Then, finetune the model on FlyingThings3D with the robust loss:
-
-```
-python train.py --config conf/train/things.yaml --weights outputs/pretrain/ckpts/best.pt
-```
-
-The entire training process takes about 10 days on 4 Tesla V100-SXM2-32GB GPUs. When the training is finished, the best weights should be saved to `outputs/things/ckpts/best.pt`.
+The entire training process takes about 3 days on 4x RTX 3090 GPUs.
 
 ### KITTI
 
-> You need to preprocess the Driving dataset before training (see `preprocess_driving.py` for detailed instructions).
-
-We adopt the training set schedule of `FlyingThings3D -> Driving -> KITTI`. Specifically, we first train our model on FlyingThings3D (see the above section for more details), then we finetune our model on Driving and KITTI sequentially.
-
-First, finetune the model on Driving using the weights trained on FlyingThings3D:
+Finetune the model on KITTI using the weights trained on FlyingThings3D:
 
 ```
-python train.py --config conf/train/driving.yaml --weights outputs/things/ckpts/best.pt
+python train.py trainset=kitti valset=kitti model=camliraft ckpt.path=checkpoints/camliraft_things150e.pt
 ```
 
-Then, finetune the model on KITTI using the weights trained on Driving:
+The entire training process takes about 0.5 days on 4x RTX 3090 GPUs. We use the last checkpoint (800th) to generate the submission.
+
+## Citation
+
+If you find them useful in your research, please cite:
 
 ```
-python train.py --config conf/train/kitti.yaml --weights outputs/driving/ckpts/best.pt
-```
+@article{liu2023learning,
+  title   = {Learning Optical Flow and Scene Flow with Bidirectional Camera-LiDAR Fusion},
+  author  = {Haisong Liu and Tao Lu and Yihui Xu and Jia Liu and Limin Wang},
+  journal = {arXiv preprint arXiv:2303.12017},
+  year    = {2023}
+}
 
-The entire training process takes about 0.5 days on 2 Tesla V100-SXM2-32GB GPUs. When the training is finished, the best weights should be saved to `outputs/kitti/ckpts/best.pt`.
+@inproceedings{liu2022camliflow,
+  title     = {Camliflow: bidirectional camera-lidar fusion for joint optical flow and scene flow estimation},
+  author    = {Liu, Haisong and Lu, Tao and Xu, Yihui and Liu, Jia and Li, Wenjie and Chen, Lijun},
+  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages     = {5791--5801},
+  year      = {2022}
+}
+```

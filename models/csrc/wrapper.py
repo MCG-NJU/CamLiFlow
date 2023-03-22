@@ -37,6 +37,26 @@ class CorrelationFunction(torch.autograd.Function):
         return grad_input1, grad_input2, None
 
 
+def correlation2d(input1: torch.Tensor, input2: torch.Tensor, max_displacement: int, cpp_impl=True):
+    def _correlation_py(_input1, _input2, _max_displacement):
+        height, width = _input1.shape[2:]
+        _input2 = torch.nn.functional.pad(_input2, [_max_displacement] * 4)
+        cost_volumes = []
+        for i in range(2 * _max_displacement + 1):
+            for j in range(2 * _max_displacement + 1):
+                cost_volume = _input1 * _input2[:, :, i:(i + height), j:(j + width)]
+                cost_volume = torch.mean(cost_volume, 1, keepdim=True)
+                cost_volumes.append(cost_volume)
+        return torch.cat(cost_volumes, 1)
+
+    if cpp_impl and callable(_correlation_forward_cuda) and callable(_correlation_backward_cuda):
+        input1 = input1.permute(0, 2, 3, 1).contiguous().float()
+        input2 = input2.permute(0, 2, 3, 1).contiguous().float()
+        return CorrelationFunction.apply(input1, input2, max_displacement)
+    else:
+        return _correlation_py(input1, input2, max_displacement)
+
+
 def squared_distance(xyz1: torch.Tensor, xyz2: torch.Tensor):
     """
     Calculate the Euclidean squared distance between every two points.
@@ -50,26 +70,6 @@ def squared_distance(xyz1: torch.Tensor, xyz2: torch.Tensor):
     dist += torch.sum(xyz1 ** 2, -1).view(batch_size, n_points1, 1)
     dist += torch.sum(xyz2 ** 2, -1).view(batch_size, 1, n_points2)
     return dist
-
-
-def correlation2d(input1: torch.Tensor, input2: torch.Tensor, max_displacement: int, cpp_impl=True):
-    def _correlation_py(_input1, _input2, _max_displacement):
-        height, width = _input1.shape[2:]
-        _input2 = torch.nn.functional.pad(_input2, [_max_displacement] * 4)
-        cost_volumes = []
-        for i in range(2 * _max_displacement + 1):
-            for j in range(2 * _max_displacement + 1):
-                cost_volume = _input1 * _input2[:, :, i:(i + height), j:(j + width)]
-                cost_volume = torch.mean(cost_volume, 1, keepdim=True)
-                cost_volumes.append(cost_volume)
-        return torch.cat(cost_volumes, 1)
-
-    if cpp_impl and callable(_correlation_forward_cuda) and callable(_correlation_backward_cuda) and input1.is_cuda and input2.is_cuda:
-        input1 = input1.permute(0, 2, 3, 1).contiguous().float()
-        input2 = input2.permute(0, 2, 3, 1).contiguous().float()
-        return CorrelationFunction.apply(input1, input2, max_displacement)
-    else:
-        return _correlation_py(input1, input2, max_displacement)
 
 
 def furthest_point_sampling(xyz: torch.Tensor, n_samples: int, cpp_impl=True):
@@ -121,7 +121,7 @@ def k_nearest_neighbor(input_xyz: torch.Tensor, query_xyz: torch.Tensor, k: int,
         input_xyz = input_xyz.transpose(1, 2).contiguous()
         query_xyz = query_xyz.transpose(1, 2).contiguous()
 
-    if cpp_impl and callable(_k_nearest_neighbor_cuda) and input_xyz.is_cuda and query_xyz.is_cuda:
+    if cpp_impl and callable(_k_nearest_neighbor_cuda) and input_xyz.is_cuda:
         return _k_nearest_neighbor_cuda(input_xyz.contiguous(), query_xyz.contiguous(), k)
     else:
         return _k_nearest_neighbor_py(input_xyz, query_xyz, k)

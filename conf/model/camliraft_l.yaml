@@ -1,0 +1,14 @@
+# @package _global_
+model:
+  name: camliraft_l
+  batch_size: 8
+
+  n_iters_train: 10
+  n_iters_eval: 20
+
+  ids:
+    enabled: true
+
+  loss:
+    gamma: 0.8
+    order: l2-norm

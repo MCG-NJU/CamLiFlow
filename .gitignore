@@ -32,20 +32,20 @@ x64
 
 # Distribution / packaging
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
+build
+develop-eggs
+dist
+downloads
 
 # IDE
-.idea/
-.vscode/
+.idea
+.vscode
 
 # Custom
-datasets/
-checkpoints/
-outputs/
-multirun/
-tmp*/
-prediction/
-submission/
+datasets
+outputs
+multirun
+prediction
+submission
+checkpoints
+pretrain

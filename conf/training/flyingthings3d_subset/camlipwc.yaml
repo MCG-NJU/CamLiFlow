@@ -1,0 +1,18 @@
+# @package _global_
+training:
+  opt: adamw
+  momentum: 0.9
+  weight_decay: 1e-6
+  grad_max_norm: 20
+  accum_iter: 1
+
+  sched: cosine
+  epochs: 600
+  lr_2d: 5e-4  # LR for 2D branch
+  lr_3d: 1e-3  # LR for 3D branch
+  min_lr: 1e-5
+  warmup_lr: 1e-5
+  warmup_epochs: 2
+  cooldown_epochs: 0
+  decay_rate: 0.1  # only for step
+  decay_epochs: 1  # only for step

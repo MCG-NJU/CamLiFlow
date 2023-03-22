@@ -83,7 +83,7 @@ def random_flip(image1, image2, pc1, pc2, flow_2d, flow_3d, f, cx, cy, flip_mode
     return new_image1, new_image2, new_pc1, new_pc2, new_flow_2d, new_flow_3d
 
 
-def crop_image_with_pc(image1, image2, pc1, pc2, flow_2d, flow_3d, f, cx, cy, crop_window):
+def crop_image_with_pc(image1, image2, pc1, pc2, flow_2d, flow_3d, f, cx, cy, crop_window, drop_pc=False):
     assert len(crop_window) == 4  # [x1, y1, x2, y2]
 
     x1, y1, x2, y2 = crop_window
@@ -107,15 +107,19 @@ def crop_image_with_pc(image1, image2, pc1, pc2, flow_2d, flow_3d, f, cx, cy, cr
     flow_2d = flow_2d[y1:y2, x1:x2].copy()
 
     # crop points
-    crop_mask1 = np.where(np.logical_and(
-        np.logical_and(xy1_x > x1, xy1_x < x2),
-        np.logical_and(xy1_y > y1, xy1_y < y2)
-    ))[0]
-    crop_mask2 = np.where(np.logical_and(
-        np.logical_and(xy2_x > x1, xy2_x < x2),
-        np.logical_and(xy2_y > y1, xy2_y < y2)
-    ))[0]
-    pc1, pc2, flow_3d = pc1[crop_mask1], pc2[crop_mask2], flow_3d[crop_mask1]
+    if drop_pc:
+        crop_mask1 = np.where(np.logical_and(
+            np.logical_and(xy1_x > x1, xy1_x < x2),
+            np.logical_and(xy1_y > y1, xy1_y < y2)
+        ))[0]
+        crop_mask2 = np.where(np.logical_and(
+            np.logical_and(xy2_x > x1, xy2_x < x2),
+            np.logical_and(xy2_y > y1, xy2_y < y2)
+        ))[0]
+        pc1, pc2, flow_3d = pc1[crop_mask1], pc2[crop_mask2], flow_3d[crop_mask1]
+
+        if pc1.shape[0] == 0 or pc2.shape[0] == 0:
+            raise AssertionError
 
     # adjust camera params
     cx = cx - x1
@@ -124,7 +128,7 @@ def crop_image_with_pc(image1, image2, pc1, pc2, flow_2d, flow_3d, f, cx, cy, cr
     return image1, image2, pc1, pc2, flow_2d, flow_3d, f, cx, cy
 
 
-def random_crop(image1, image2, pc1, pc2, flow_2d, flow_3d, f, cx, cy, crop_size):
+def random_crop(image1, image2, pc1, pc2, flow_2d, flow_3d, f, cx, cy, crop_size, drop_pc):
     assert flow_3d.shape[1] <= 4
     assert len(crop_size) == 2
     crop_w, crop_h = crop_size
@@ -137,7 +141,7 @@ def random_crop(image1, image2, pc1, pc2, flow_2d, flow_3d, f, cx, cy, crop_size
     y1 = np.random.randint(low=0, high=image_h - crop_h + 1)
     crop_window = [x1, y1, x1 + crop_w, y1 + crop_h]
 
-    return crop_image_with_pc(image1, image2, pc1, pc2, flow_2d, flow_3d, f, cx, cy, crop_window)
+    return crop_image_with_pc(image1, image2, pc1, pc2, flow_2d, flow_3d, f, cx, cy, crop_window, drop_pc)
 
 
 def resize_sparse_flow_map(flow, target_w, target_h):
@@ -235,7 +239,8 @@ def joint_augmentation(image1, image2, pc1, pc2, flow_2d, flow_3d, f, cx, cy, cf
     if cfgs.random_crop.enabled:
         image1, image2, pc1, pc2, flow_2d, flow_3d, f, cx, cy = random_crop(
             image1, image2, pc1, pc2, flow_2d, flow_3d, f, cx, cy,
-            crop_size=cfgs.random_crop.crop_size
+            crop_size=cfgs.random_crop.crop_size,
+            drop_pc=cfgs.random_crop.drop_pc
         )
 
     if cfgs.random_scale.enabled:

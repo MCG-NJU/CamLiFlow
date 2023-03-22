@@ -1,0 +1,22 @@
+# @package _global_
+training:
+  opt: adamw
+  momentum: 0.9
+  weight_decay: 1e-6
+  grad_max_norm: 1
+  accum_iter: 1
+
+  sched: cosine
+  epochs: 800
+  lr_2d: 1e-4
+  lr_3d: 1e-3
+  min_lr: 1e-5
+  warmup_lr: 1e-5
+  warmup_epochs: 0
+  cooldown_epochs: 0
+  decay_rate: 1.0  # only for step
+  decay_epochs: 1  # only for step
+
+override:
+  model:
+    freeze_bn: true

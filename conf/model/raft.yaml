@@ -1,0 +1,16 @@
+# @package _global_
+model:
+  name: raft
+  batch_size: 8
+
+  pretrain:
+    enabled: false
+    depth: 18
+    weights: torchvision://resnet18
+
+  n_iters_train: 12
+  n_iters_eval: 24
+
+  loss:
+    gamma: 0.8
+    order: l2-norm

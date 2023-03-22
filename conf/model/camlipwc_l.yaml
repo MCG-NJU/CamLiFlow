@@ -1,0 +1,16 @@
+# @package _global_
+model:
+  name: camlipwc_l
+  batch_size: 32
+
+  ids:
+    enabled: true
+
+  norm:
+    feature_pyramid: batch_norm
+    correlation: null
+    flow_estimator: null
+
+  loss:
+    level_weights: [8, 4, 2, 1, 0.5]
+    order: l2-norm

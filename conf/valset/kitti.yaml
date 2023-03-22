@@ -1,0 +1,12 @@
+# @package _global_
+valset:
+  name: kitti
+  root_dir: datasets/kitti_scene_flow
+  split: training40
+  n_workers: 8
+
+  max_depth: 90
+  n_points: 8192
+
+  augmentation:
+    enabled: false

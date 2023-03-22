@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+ - _self_
+ - testset: ???
+ - model: ???
+
+ckpt:
+  path: ???
+  strict: true
+
+save_results: false

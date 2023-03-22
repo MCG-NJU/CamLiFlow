@@ -9,13 +9,17 @@ from augmentation import joint_augmentation
 class KITTI(torch.utils.data.Dataset):
     def __init__(self, cfgs):
         assert os.path.isdir(cfgs.root_dir)
-        assert cfgs.split in ['training200', 'training160', 'training40']
+        assert cfgs.split in ['training200', 'training160', 'training40', 'testing200']
 
-        self.root_dir = os.path.join(cfgs.root_dir, 'training')
+        if 'training' in cfgs.split:
+            self.root_dir = os.path.join(cfgs.root_dir, 'training')
+        else:
+            self.root_dir = os.path.join(cfgs.root_dir, 'testing')
+
         self.split = cfgs.split
         self.cfgs = cfgs
 
-        if self.split == 'training200':
+        if self.split == 'training200' or self.split == 'testing200':
             self.indices = np.arange(200)
         elif self.split == 'training160':
             self.indices = [i for i in range(200) if i % 5 != 0]
@@ -37,6 +41,9 @@ class KITTI(torch.utils.data.Dataset):
 
         image1 = cv2.imread(os.path.join(self.root_dir, 'image_2', '%06d_10.png' % index))[..., ::-1]
         image2 = cv2.imread(os.path.join(self.root_dir, 'image_2', '%06d_11.png' % index))[..., ::-1]
+        data_dict['input_h'] = image1.shape[0]
+        data_dict['input_w'] = image1.shape[1]
+
         flow_2d, flow_2d_mask = load_flow_png(os.path.join(self.root_dir, 'flow_occ', '%06d_10.png' % index))
 
         disp1, mask1 = load_disp_png(os.path.join(self.root_dir, 'disp_occ_0', '%06d_10.png' % index))
@@ -96,15 +103,12 @@ class KITTITest(torch.utils.data.Dataset):
         self.root_dir = os.path.join(cfgs.root_dir, 'testing')
         self.split = cfgs.split
         self.cfgs = cfgs
-        self.indices = np.arange(200)
 
     def __len__(self):
-        return len(self.indices)
+        return 200
 
-    def __getitem__(self, i):
+    def __getitem__(self, index):
         np.random.seed(23333)
-
-        index = self.indices[i]
         data_dict = {'index': index}
 
         proj_mat = load_calib(os.path.join(self.root_dir, 'calib_cam_to_cam', '%06d.txt' % index))
@@ -115,19 +119,19 @@ class KITTITest(torch.utils.data.Dataset):
         data_dict['input_h'] = image1.shape[0]
         data_dict['input_w'] = image1.shape[1]
 
-        disp1, mask1 = load_disp_png(os.path.join(self.root_dir, 'disp_ganet', '%06d_10.png' % index))
-        disp2, mask2 = load_disp_png(os.path.join(self.root_dir, 'disp_ganet', '%06d_11.png' % index))
+        disp1, mask1 = load_disp_png(os.path.join(self.root_dir, 'disp_%s' % self.cfgs.disp_provider, '%06d_10.png' % index))
+        disp2, mask2 = load_disp_png(os.path.join(self.root_dir, 'disp_%s' % self.cfgs.disp_provider, '%06d_11.png' % index))
 
-        # ignore top 100 rows without evaluation
-        mask1[:100] = 0
-        mask2[:100] = 0
+        # ignore top 110 rows without evaluation
+        mask1[:110] = 0
+        mask2[:110] = 0
 
-        # disparity -> point clouds
         pc1 = disp2pc(disp1, baseline=0.54, f=f, cx=cx, cy=cy)[mask1]
         pc2 = disp2pc(disp2, baseline=0.54, f=f, cx=cx, cy=cy)[mask2]
 
-        # limit max height
-        pc1, pc2 = self.clip_point_cloud(pc1, pc2)
+        # limit max height (2.0m)
+        pc1 = pc1[pc1[..., 1] > -2.0]
+        pc2 = pc2[pc2[..., 1] > -2.0]
 
         # limit max depth
         pc1 = pc1[pc1[..., -1] < self.cfgs.max_depth]
@@ -151,25 +155,3 @@ class KITTITest(torch.utils.data.Dataset):
         data_dict['intrinsics'] = np.float32([f, cx, cy])
 
         return data_dict
-
-    @staticmethod
-    def clip_point_cloud(pc1, pc2):
-        """
-        Rotate pc1 and pc2 by a small angle (1.6°), then apply clipping and rotate back.
-        """
-        theta = -np.pi * 1.6 / 180.0
-        rot = np.array([
-            [1, 0, 0],
-            [0, np.cos(theta), -np.sin(theta)],
-            [0, np.sin(theta), np.cos(theta)],
-        ], dtype=np.float32)
-
-        pc1 = np.dot(rot, pc1.T).T
-        pc1 = pc1[pc1[..., 1] > -1]  # limit max height
-        pc1 = np.dot(np.linalg.inv(rot), pc1.T).T
-
-        pc2 = np.dot(rot, pc2.T).T
-        pc2 = pc2[pc2[..., 1] > -1]  # limit max height
-        pc2 = np.dot(np.linalg.inv(rot), pc2.T).T
-
-        return pc1, pc2

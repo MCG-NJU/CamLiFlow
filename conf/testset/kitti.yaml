@@ -1,0 +1,18 @@
+# @package _global_
+testset:
+  name: kitti
+  root_dir: datasets/kitti_scene_flow
+  split: testing200
+  n_workers: 8
+
+  disp_provider: ganet
+  max_depth: 90
+  n_points: 8192
+
+  zero_padding:
+    enabled: true
+    target_h: 376
+    target_w: 1242
+
+  augmentation:
+    enabled: false

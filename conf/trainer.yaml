@@ -1,0 +1,24 @@
+# @package _global_
+defaults:
+ - _self_
+ - trainset: ???
+ - valset: ???
+ - model: ???
+ - training: ${trainset}/${model}
+
+log:
+  dir: null
+  ask_name: true
+  save_ckpt: true
+  save_scalar_summary: true
+  save_image_summary: false
+
+ckpt:
+  path: null
+  resume: false
+
+val_interval: 5
+port: random  # for multi-gpu training
+amp: false
+debug: false
+sync_bn: true

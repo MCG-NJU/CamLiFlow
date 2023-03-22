@@ -1,0 +1,26 @@
+# @package _global_
+model:
+  name: camliraft
+  batch_size: 8
+  freeze_bn: false
+
+  backbone:
+    depth: 50
+    pretrained: pretrain/resnet50-11ad3fa6.pth
+
+  n_iters_train: 10
+  n_iters_eval: 20
+
+  fuse_fnet: true
+  fuse_cnet: true
+  fuse_corr: true
+  fuse_motion: true
+  fuse_hidden: false
+
+  loss2d:
+    gamma: 0.8
+    order: l2-norm
+
+  loss3d:
+    gamma: 0.8
+    order: l2-norm

@@ -1,0 +1,28 @@
+# @package _global_
+trainset:
+  name: kitti
+  root_dir: datasets/kitti_scene_flow
+  split: training160
+  n_workers: 8
+  drop_last: false
+
+  max_depth: 90
+  n_points: 8192
+
+  augmentation:
+    enabled: true
+    color_jitter:
+      enabled: true
+      brightness: 0.4
+      contrast: 0.4
+      saturation: 0.2
+      hue: 0.127  # 0.4/3.14
+    random_horizontal_flip:
+      enabled: true
+    random_vertical_flip:
+      enabled: false
+    random_crop:
+      enabled: false
+    random_scale:
+      enabled: true
+      scale_range: [1.0, 1.5]

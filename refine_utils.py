@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import cv2
 
-# https://github.com/mcordts/cityscapesScripts/blob/master/cityscapesscripts/helpers/labels.py
+# copy from https://github.com/mcordts/cityscapesScripts/blob/master/cityscapesscripts/helpers/labels.py
 seg_colors = [
     (0, 0, 0),          # id 0, unlabeled, void
     (0, 0, 0),          # id 1, ego vehicle, void
@@ -42,7 +42,7 @@ seg_colors = [
 ]
 
 
-# https://github.com/gengshan-y/rigidmask/blob/main/utils/dydepth.py#L213
+# borrowed from https://github.com/gengshan-y/rigidmask/blob/main/utils/dydepth.py#L213
 def triangulation(disp, xcoord, ycoord, bl=1, fl=450, cx=479.5, cy=269.5):
     mask = (disp <= 0).flatten()
     depth = bl * fl / (disp)  # 450px->15mm focal length
@@ -55,7 +55,7 @@ def triangulation(disp, xcoord, ycoord, bl=1, fl=450, cx=479.5, cy=269.5):
     return P
 
 
-# https://github.com/gengshan-y/rigidmask/blob/main/utils/dydepth.py#L224
+# borrowed from https://github.com/gengshan-y/rigidmask/blob/main/utils/dydepth.py#L224
 def midpoint_triangulate(x, cam):
     """
     Args:
@@ -110,7 +110,7 @@ def midpoint_triangulate(x, cam):
     return midpoint[:, :, 0].T, np.asarray(Bo)
 
 
-# https://github.com/gengshan-y/rigidmask/blob/main/utils/dydepth.py#L277
+# borrowed from https://github.com/gengshan-y/rigidmask/blob/main/utils/dydepth.py#L277
 def register_disp_fast(id_flow, id_mono, mask, inlier_th=0.01, niters=100):
     """ 
     input: disp_flow, disp_mono, mask
@@ -145,7 +145,7 @@ def register_disp_fast(id_flow, id_mono, mask, inlier_th=0.01, niters=100):
     return registered_flow, scale, ninliers
 
 
-# https://github.com/gengshan-y/rigidmask/blob/main/models/submodule.py#L661
+# borrowed from https://github.com/gengshan-y/rigidmask/blob/main/models/submodule.py#L661
 def F_ngransac(hp0, hp1, Ks, rand, unc_occ, iters=1000, cv=False, Kn=None):
     if Kn is None:
         Kn = Ks
@@ -210,7 +210,7 @@ def F_ngransac(hp0, hp1, Ks, rand, unc_occ, iters=1000, cv=False, Kn=None):
     return rot, trans, Es
 
 
-# https://github.com/gengshan-y/rigidmask/blob/main/utils/dydepth.py#L321
+# borrowed from https://github.com/gengshan-y/rigidmask/blob/main/utils/dydepth.py#L321
 def testEss(K0, K1, R, T, p1, p2):
     testP = cv2.triangulatePoints(K0.dot(np.concatenate((np.eye(3), np.zeros((3, 1))), -1)),
                                   K1.dot(np.concatenate((R, T), -1)),
@@ -223,7 +223,7 @@ def testEss(K0, K1, R, T, p1, p2):
         return False
 
 
-# https://github.com/gengshan-y/rigidmask/blob/main/utils/dydepth.py#L334
+# borrowed from https://github.com/gengshan-y/rigidmask/blob/main/utils/dydepth.py#L334
 def pose_estimate(K0, K1, hp0, hp1, strict_mask, rot, th=0.0001):
     # epipolar geometry
     tmphp0 = hp0[:, strict_mask]
@@ -288,8 +288,7 @@ def evaluate_tri(t10, R01, K0, K1, hp0, hp1, disp0, bl, inlier_th=0.1, select_th
     return agree_mask, t10 * scale, rank
 
 
-# https://github.com/gengshan-y/rigidmask/blob/main/utils/dydepth.py#L425
-def mod_flow(bg_mask, disp, disp_change, flow, K0, K1, bl, noc_mask, parallax_th=8):
+def mod_flow(bg_mask, disp, disp_change, flow, K0, K1, bl, occ_mask, parallax_th=8):
     # prepare data
     flow = flow.copy()
     h, w = flow.shape[:2]
@@ -302,7 +301,7 @@ def mod_flow(bg_mask, disp, disp_change, flow, K0, K1, bl, noc_mask, parallax_th
     hp1 = np.concatenate((x1[np.newaxis], y1[np.newaxis], np.ones(x1.shape)[np.newaxis]), 0).reshape((3, -1))
 
     # use bg + valid pixels to compute R/t
-    valid_mask = np.logical_and(disp > 0, np.logical_and(bg_mask, noc_mask)).flatten()
+    valid_mask = np.logical_and(disp > 0, np.logical_and(bg_mask, occ_mask)).flatten()
 
     R01, T01, _, comp_hp1, _ = pose_estimate(K0, K1, hp0, hp1, valid_mask, [0, 0, 0])
 

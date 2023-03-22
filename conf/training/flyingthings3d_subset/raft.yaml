@@ -1,0 +1,27 @@
+# @package _global_
+training:
+  opt: adamw
+  momentum: 0.9
+  weight_decay: 1e-6
+  grad_max_norm: 1
+  accum_iter: 1
+
+  sched: cosine
+  epochs: 200
+  lr: 2e-4
+  min_lr: 0
+  warmup_lr: 1e-5
+  warmup_epochs: 5
+  cooldown_epochs: 0
+  decay_rate: 0.1  # only for step
+  decay_epochs: 1  # only for step
+
+override:
+  trainset:
+    with_pc: false
+    augmentation:
+      random_crop:
+        enabled: true
+        crop_size: [800, 480]
+  valset:
+    with_pc: false

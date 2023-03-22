@@ -1,0 +1,35 @@
+# @package _global_
+model:
+  name: camlipwc
+  batch_size: 32
+  freeze_bn: false
+
+  pwc2d:
+    norm:
+      feature_pyramid: batch_norm
+      flow_estimator: null
+      context_network: null
+    max_displacement: 4
+    lite_estimator: false
+    fixed: false
+
+  pwc3d:
+    norm:
+      feature_pyramid: batch_norm
+      correlation: null
+      flow_estimator: null
+    fixed: false
+    k: 16
+
+  fusion:
+    fuse_pyramid: true
+    fuse_correlation: true
+    fuse_estimator: true
+
+  loss2d:
+    level_weights: [8, 4, 2, 1, 0.5]
+    order: l2-norm
+
+  loss3d:
+    level_weights: [8, 4, 2, 1, 0.5]
+    order: l2-norm

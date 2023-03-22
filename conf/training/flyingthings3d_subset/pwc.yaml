@@ -1,0 +1,18 @@
+# @package _global_
+training:
+  opt: adam
+  momentum: 0.9
+  grad_max_norm: 20.0
+  weight_decay: 1e-6
+  eps: 1e-7
+  accum_iter: 1
+
+  sched: cosine
+  epochs: 200
+  lr: 1e-3
+  min_lr: 1e-5
+  warmup_lr: 1e-4
+  warmup_epochs: 10
+  cooldown_epochs: 0
+  decay_rate: 0.1  # only for step
+  decay_epochs: 1  # only for step

@@ -1,0 +1,16 @@
+# @package _global_
+model:
+  name: pwc
+  batch_size: 32
+  
+  max_displacement: 4
+  lite_estimator: false
+
+  norm:
+    feature_pyramid: batch_norm
+    flow_estimator: null
+    context_network: null
+
+  loss:
+    level_weights: [8, 4, 2, 1, 0.5]
+    order: l2-norm

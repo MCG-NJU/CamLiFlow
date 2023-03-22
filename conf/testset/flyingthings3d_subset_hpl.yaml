@@ -1,0 +1,12 @@
+# @package _global_
+testset:
+  name: flyingthings3d
+  root_dir: datasets/flyingthings3d_subset_prep_hpl
+  split: val
+  n_workers: 8
+
+  n_points: 8192
+  max_depth: 35.0
+
+  augmentation:
+    enabled: false

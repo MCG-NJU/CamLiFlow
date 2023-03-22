@@ -2,6 +2,7 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
+#define MAX_K 64
 #define THREADS_PER_BLOCK 256
 #define DIVUP(m, n) ((m) / (n) + ((m) % (n) > 0))
 
@@ -21,8 +22,8 @@ __global__ void k_nearest_neighbor_2d_kernel(int b, int n, int m, int k,
 	float uy = query_xyz[1];
 
 	// initialize
-	float nn_dists[32]; int nn_indices[32];
-	for (int i = 0; i < 32; i++) {
+	float nn_dists[MAX_K]; int nn_indices[MAX_K];
+	for (int i = 0; i < MAX_K; i++) {
 		nn_dists[i] = 1e9;
 		nn_indices[i] = 0;
 	}
@@ -65,8 +66,8 @@ __global__ void k_nearest_neighbor_3d_kernel(int b, int n, int m, int k,
 	float uz = query_xyz[2];
 
 	// initialize
-	float nn_dists[32]; int nn_indices[32];
-	for (int i = 0; i < 32; i++) {
+	float nn_dists[MAX_K]; int nn_indices[MAX_K];
+	for (int i = 0; i < MAX_K; i++) {
 		nn_dists[i] = 1e9;
 		nn_indices[i] = 0;
 	}

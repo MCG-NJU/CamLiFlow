@@ -12,25 +12,21 @@ from utils import init_logging, load_fpm, load_flow, disp2pc, save_flow_png
 '''
 Download the "FlyingThings3D subset" from:
 https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html
-
 You need to download the following part:
-
 * RGB images (cleanpass)
 * Disparity
 * Disparity change
 * Optical flow
 * Flow occlusions
-
 Uncompress them and organize the structure of directory as follows:
-
 /mnt/data/flyingthings3d_subset
 ├── train
-│   ├── disparity
-│   ├── disparity_change
-│   ├── disparity_occlusions
-│   ├── flow
-│   ├── flow_occlusions
-│   └── image_clean
+│   ├── disparity
+│   ├── disparity_change
+│   ├── disparity_occlusions
+│   ├── flow
+│   ├── flow_occlusions
+│   └── image_clean
 └── val
     ├── disparity
     ├── disparity_change
@@ -38,16 +34,13 @@ Uncompress them and organize the structure of directory as follows:
     ├── flow
     ├── flow_occlusions
     └── image_clean
-
 Then preprocess the data:
-
 python preprocess_flyingthings3d_subset.py --input_dir /mnt/data/flyingthings3d_subset
 '''
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--input_dir', required=True, help='Path to the FlyingThings3D subset')
-parser.add_argument('--output_dir', required=False, default='datasets/flyingthings3d_subset')
+parser.add_argument('--output_dir', required=False, default='datasets/flyingthings3d_subset_prep')
 parser.add_argument('--n_points', required=False, default=[32768, 8192])
 parser.add_argument('--max_depth', required=False, default=35.0)
 parser.add_argument('--remove_occluded_points', action='store_true')
@@ -182,7 +175,7 @@ def main():
             logging.info('Copying images...')
             shutil.copytree(
                 src=os.path.join(args.input_dir, split, 'image_clean', 'left'),
-                dst=os.path.join(args.output_dir, split, 'image')
+                dst=os.path.join(args.output_dir, split, 'image_clean')
             )
 
         if not os.path.exists(os.path.join(args.output_dir, split, 'occ_mask_2d')):
