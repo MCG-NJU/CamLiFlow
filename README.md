@@ -45,7 +45,7 @@ Here, we provide precomputed results for the submission to the online benchmark 
 |---------|--------|--------|--------|--------|------|
 | CamLiFlow    | 1.81%  | 3.19%  | 4.05%  | 5.62%  | [camliflow-wo-refine.zip](https://drive.google.com/file/d/1zfH-uS9MxgZ8JZwUjNNHq7vASz1WD7SW/view?usp=sharing) |
 | CamLiFlow \* | 1.81%  | 2.95%  | 3.10%  | 4.43%  | [camliflow.zip](https://drive.google.com/file/d/1qi7zxSmEDcCA1ChwVHv6_eyNSXVxez7x/view?usp=sharing) |
-| CamLiRAFT    | 1.81%  | 3.02%  | 3.43%  | 4.97%  | [camliraft-non-rigid.zip](https://drive.google.com/file/d/1H3x_OBRsVteDb7i5gaaY7cDc9ZQxUnZy/view?usp=sharing) |
+| CamLiRAFT    | 1.81%  | 3.02%  | 3.43%  | 4.97%  | [camliraft-wo-refine.zip](https://drive.google.com/file/d/1H3x_OBRsVteDb7i5gaaY7cDc9ZQxUnZy/view?usp=sharing) |
 | CamLiRAFT \* | 1.81%  | 2.94%  | 2.96%  | 4.26%  | [camliraft.zip](https://drive.google.com/file/d/1mzL5vKIOg-boBgknaxssuaiGcqvUybrV/view?usp=sharing) |
 
 ## Environment
