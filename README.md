@@ -6,6 +6,8 @@ This is the official PyTorch implementation for our two papers:
 
 * Extended version (CamLiRAFT): [Learning Optical Flow and Scene Flow with Bidirectional Camera-LiDAR Fusion](https://arxiv.org/abs/2303.12017). (arXiv 2023)
 
+中文解读：[https://zhuanlan.zhihu.com/p/616384758](https://zhuanlan.zhihu.com/p/616384758)
+
 ![](asserts/banner.jpg)
 
 ## Changes to the Conference Paper
