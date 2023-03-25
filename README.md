@@ -33,11 +33,11 @@ In this extended version, we instantiate a new type of the bidirectional fusion 
 
 ## Pretrained Weights
 
-| Model | Training set | Weights |
-|-------|--------------|---------|
-| CamLiRAFT | Things (80e) | [camliraft_things80e.pt](https://drive.google.com/file/d/1nTh4Mugy5XltjcJHa7Byld2KIQ1IXrbm/view?usp=sharing) |
-| CamLiRAFT | Things (150e) | [camliraft_things150e.pt](https://drive.google.com/file/d/1BEuKy5WMbaABW5Wz-Gx879kcNJ2Zla2Z/view?usp=sharing) |
-| CamLiRAFT | Things (150e) -> KITTI (800e) | [camliraft_things150e_kitti800e.pt](https://drive.google.com/file/d/18rBJpy1Bero9dM6HfqKfdZqE4vpU84aD/view?usp=sharing) |
+| Model | Training set | Weights | Comments |
+|-------|--------------|---------|----------|
+| CamLiRAFT | Things (80e) | [camliraft_things80e.pt](https://drive.google.com/file/d/1nTh4Mugy5XltjcJHa7Byld2KIQ1IXrbm/view?usp=sharing) | Best generalization performance |
+| CamLiRAFT | Things (150e) | [camliraft_things150e.pt](https://drive.google.com/file/d/1BEuKy5WMbaABW5Wz-Gx879kcNJ2Zla2Z/view?usp=sharing) | Best performance on Things | 
+| CamLiRAFT | Things (150e) -> KITTI (800e) | [camliraft_things150e_kitti800e.pt](https://drive.google.com/file/d/18rBJpy1Bero9dM6HfqKfdZqE4vpU84aD/view?usp=sharing) | Best performance on KITTI |
 
 ## Precomputed Results
 
