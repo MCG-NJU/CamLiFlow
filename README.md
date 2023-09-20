@@ -24,6 +24,7 @@ In this extended version, we instantiate a new type of the bidirectional fusion 
 
 ## News
 
+* 2023-09-20: We provide a demo for CamLiRAFT, see `demo.py` for more details.
 * 2023-03-22: We release CamLiRAFT, an extended version of CamLiFlow on [https://arxiv.org/abs/2303.12017](https://arxiv.org/abs/2303.12017).
 * 2022-03-29: Our paper is selected for an **oral** presentation. 
 * 2022-03-07: We release the code and the pretrained weights.
@@ -90,6 +91,16 @@ mv resnet50-11ad3fa6.pth pretrain/
 ```
 
 NG-RANSAC is also required if you want to evaluate on KITTI. Please follow [https://github.com/vislearn/ngransac](https://github.com/vislearn/ngransac) to install the library.
+
+## Demo
+
+Then, run the following script to launch a demo of estimating optical flow and scene flow from a pair of images and point clouds:
+
+```
+python demo.py --model camliraft --weights /path/to/camliraft/checkpoint.pt
+```
+
+Note that CamLiRAFT is not very robust to objects at a greater distance, as the network has only been trained on data with a depth of less than 35m. If you are getting bad results on your own data, try scaling the depth of the point cloud to a range of 5 ~ 35m.
 
 ## Evaluation
 
