@@ -1,10 +1,13 @@
 # CamLiFlow & CamLiRAFT
 
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/learning-optical-flow-and-scene-flow-with/optical-flow-estimation-on-kitti-2015)](https://paperswithcode.com/sota/optical-flow-estimation-on-kitti-2015?p=learning-optical-flow-and-scene-flow-with)
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/learning-optical-flow-and-scene-flow-with/scene-flow-estimation-on-kitti-2015-scene-1)](https://paperswithcode.com/sota/scene-flow-estimation-on-kitti-2015-scene-1?p=learning-optical-flow-and-scene-flow-with)
+
 This is the official PyTorch implementation for our two papers: 
 
 * Conference version: [CamLiFlow: Bidirectional Camera-LiDAR Fusion for Joint Optical Flow and Scene Flow Estimation](https://arxiv.org/abs/2111.10502). (CVPR 2022 Oral)
 
-* Extended version (CamLiRAFT): [Learning Optical Flow and Scene Flow with Bidirectional Camera-LiDAR Fusion](https://arxiv.org/abs/2303.12017). (arXiv 2023)
+* Extended version (CamLiRAFT): [Learning Optical Flow and Scene Flow with Bidirectional Camera-LiDAR Fusion](https://arxiv.org/abs/2303.12017). (TPAMI 2023)
 
 中文解读：[https://zhuanlan.zhihu.com/p/616384758](https://zhuanlan.zhihu.com/p/616384758)
 
@@ -24,6 +27,7 @@ In this extended version, we instantiate a new type of the bidirectional fusion 
 
 ## News
 
+* 2023-11-05: CamLiRAFT is accepted to TPAMI. Thanks for the valuable suggestions from the reviewers!
 * 2023-09-20: We provide a demo for CamLiRAFT, see `demo.py` for more details.
 * 2023-03-22: We release CamLiRAFT, an extended version of CamLiFlow on [https://arxiv.org/abs/2303.12017](https://arxiv.org/abs/2303.12017).
 * 2022-03-29: Our paper is selected for an **oral** presentation. 
