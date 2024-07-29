@@ -93,30 +93,39 @@ class Demo:
         outputs = self.model(inputs)
 
         # NCHW -> NHWC
-        flow_2d = outputs['flow_2d'][0].cpu().numpy().transpose(1, 2, 0)
-        flow_3d = outputs['flow_3d'][0].cpu().numpy().transpose()
+        if 'flow_2d' in outputs:
+            flow_2d = outputs['flow_2d'][0].cpu().numpy().transpose(1, 2, 0)
+        else:
+            flow_2d = None
+        
+        if 'flow_3d' in outputs:
+            flow_3d = outputs['flow_3d'][0].cpu().numpy().transpose()
+        else:
+            flow_3d = None
 
         self.display(image1, image2, pc1, pc2, flow_2d, flow_3d)
 
     def display(self, image1, image2, pc1, pc2, flow_2d, flow_3d):
         # visualize optical flow
-        flow_2d_img = viz_optical_flow(flow_2d)
-        images = np.concatenate([image1, image2, flow_2d_img], axis=0)
-        images = cv2.resize(images, dsize=None, fx=0.5, fy=0.5)
-        cv2.imshow('', images[..., ::-1])
-        cv2.waitKey(0)
+        if flow_2d is not None:
+            flow_2d_img = viz_optical_flow(flow_2d)
+            images = np.concatenate([image1, image2, flow_2d_img], axis=0)
+            images = cv2.resize(images, dsize=None, fx=0.5, fy=0.5)
+            cv2.imshow('', images[..., ::-1])
+            cv2.waitKey(0)
 
         # visualize scene flow
-        point_cloud1 = open3d.geometry.PointCloud()
-        point_cloud2 = open3d.geometry.PointCloud()
-        point_cloud3 = open3d.geometry.PointCloud()  # pc1 + flow3d
-        point_cloud1.points = open3d.utility.Vector3dVector(pc1)
-        point_cloud2.points = open3d.utility.Vector3dVector(pc2)
-        point_cloud3.points = open3d.utility.Vector3dVector(pc1 + flow_3d)
-        point_cloud1.colors = open3d.utility.Vector3dVector(np.zeros_like(pc1) + [1, 0, 0])
-        point_cloud2.colors = open3d.utility.Vector3dVector(np.zeros_like(pc2) + [0, 1, 0])
-        point_cloud3.colors = open3d.utility.Vector3dVector(np.zeros_like(pc1) + [0, 0, 1])
-        open3d.visualization.draw_geometries([point_cloud1, point_cloud2, point_cloud3])
+        if flow_3d is not None:
+            point_cloud1 = open3d.geometry.PointCloud()
+            point_cloud2 = open3d.geometry.PointCloud()
+            point_cloud3 = open3d.geometry.PointCloud()  # pc1 + flow3d
+            point_cloud1.points = open3d.utility.Vector3dVector(pc1)
+            point_cloud2.points = open3d.utility.Vector3dVector(pc2)
+            point_cloud3.points = open3d.utility.Vector3dVector(pc1 + flow_3d)
+            point_cloud1.colors = open3d.utility.Vector3dVector(np.zeros_like(pc1) + [1, 0, 0])
+            point_cloud2.colors = open3d.utility.Vector3dVector(np.zeros_like(pc2) + [0, 1, 0])
+            point_cloud3.colors = open3d.utility.Vector3dVector(np.zeros_like(pc1) + [0, 0, 1])
+            open3d.visualization.draw_geometries([point_cloud1, point_cloud2, point_cloud3])
 
 
 if __name__ == '__main__':
@@ -146,7 +155,7 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    assert args.model in ['camlipwc', 'camliraft']
+    assert args.model in ['camlipwc', 'camliraft', 'camliraft_l']
 
     with open('conf/model/%s.yaml' % args.model, encoding='utf-8') as f:
         cfgs = DictConfig(yaml.load(f, Loader=yaml.FullLoader))

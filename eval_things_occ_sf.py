@@ -16,6 +16,7 @@ from utils import copy_to_device, size_of_batch
 
 
 class FlyingThings3DSubsetFlowNet3D(data.Dataset):
+    """Occuluded evaluation following FlowNet3D"""
     def __init__(self, cfgs):
         self.root_dir = cfgs.root_dir
         self.n_points = cfgs.n_points

@@ -36,7 +36,24 @@ class CamLiRAFT_L(FlowModel):
         else:
             paral_cam_info = None
 
+        if 'src_mean' in inputs and 'dst_mean' in inputs:
+            src_mean = inputs['src_mean'][..., None]
+            dst_mean = inputs['dst_mean'][..., None]
+            src_std = inputs['src_std'][..., None]
+            dst_std = inputs['dst_std'][..., None]
+        
+            pc1 = ((pc1 - src_mean) / src_std) * dst_std + dst_mean
+            pc2 = ((pc2 - src_mean) / src_std) * dst_std + dst_mean
+
         flow_preds = self.core.forward(pc1, pc2)
+
+        if 'src_mean' in inputs and 'dst_mean' in inputs:
+            for i in range(len(flow_preds)):
+                pcw = pc1 + flow_preds[i]
+                flow_preds[i] = (((pcw - dst_mean) / dst_std) * src_std + src_mean) - \
+                                (((pc1 - dst_mean) / dst_std) * src_std + src_mean)
+
+            pc1 = (((pc1 - dst_mean) / dst_std) * src_std + src_mean)
 
         if self.cfgs.ids.enabled:
             for i in range(len(flow_preds)):
@@ -44,6 +61,9 @@ class CamLiRAFT_L(FlowModel):
                                 paral2persp(pc1, persp_cam_info, paral_cam_info)
 
         final_flow_3d = flow_preds[-1]
+
+        if 'flow_3d' not in inputs:
+            return {'flow_3d': final_flow_3d}
 
         target_3d = inputs['flow_3d'][:, :3]
         self.loss = calc_sequence_loss_3d(flow_preds, target_3d, self.cfgs.loss)

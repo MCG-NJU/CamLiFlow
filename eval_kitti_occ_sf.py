@@ -1,4 +1,5 @@
 import os
+import glob
 import utils
 import hydra
 import shutil
@@ -11,53 +12,77 @@ import numpy as np
 from tqdm import tqdm
 from omegaconf import DictConfig
 from factory import model_factory
-from utils import copy_to_device, size_of_batch
+from utils import copy_to_device, size_of_batch, load_calib
 
 
-class FlyingThings3DSubsetHPL(data.Dataset):
-    """Non-occluded evaluation following HPLFlowNet"""
-    def __init__(self, cfgs):
-        self.root_dir = cfgs.root_dir
-        self.n_points = cfgs.n_points
-
-        split_dir = os.path.join(self.root_dir, 'val')
-        useful_paths = sorted([item[0] for item in os.walk(split_dir) if len(item[1]) == 0])
-        assert (len(useful_paths) == 3824)
-
-        self.samples = useful_paths
-
-    def __len__(self):
-        return len(self.samples)
+class KITTIFlowNet3d(data.Dataset):
+    """ Occluded evaluation following FlowNet3D """
+    def __init__(self, root='datasets/kitti_scene_flow/training/kitti_rm_ground', npoints=8192):
+        self.npoints = npoints
+        self.root = root
+        self.datapath = glob.glob(os.path.join(self.root, '*.npz'))
+        self.cache = {}
+        self.cache_size = 30000
 
     def __getitem__(self, index):
+        np.random.seed(1)
         data_dict = {'index': index}
 
-        pc1, pc2 = self.pc_loader(self.samples[index])
-        sf = pc2[:, :3] - pc1[:, :3]
+        if index in self.cache:
+            pos1, pos2, flow = self.cache[index]
+        else:
+            fn = self.datapath[index]
 
-        indices1 = np.random.choice(pc1.shape[0], size=self.n_points, replace=False, p=None)
-        indices2 = np.random.choice(pc2.shape[0], size=self.n_points, replace=False, p=None)
+            with open(fn, 'rb') as fp:
+                data = np.load(fp)
+                pos1 = data['pos1']
+                pos2 = data['pos2']
+                flow = data['gt']
 
-        pc1, pc2, sf = pc1[indices1], pc2[indices2], sf[indices1]
+            if len(self.cache) < self.cache_size:
+                self.cache[index] = (pos1, pos2, flow)
 
-        pc_pair = np.concatenate([pc1, pc2], axis=1)
-        data_dict['pcs'] = pc_pair.transpose()
-        data_dict['flow_3d'] = sf.transpose()
-        data_dict['intrinsics'] = np.float32([1050, 479.5, 269.5])  # f, cx, cy
+            n1 = pos1.shape[0]
+            n2 = pos2.shape[0]
+
+            if n1 >= self.npoints:
+                sample_idx1 = np.random.choice(n1, self.npoints, replace=False)
+            else:
+                sample_idx1 = np.concatenate((np.arange(n1), np.random.choice(n1, self.npoints - n1, replace=True)), axis=-1)
+
+            if n2 >= self.npoints:
+                sample_idx2 = np.random.choice(n2, self.npoints, replace=False)
+            else:
+                sample_idx2 = np.concatenate((np.arange(n2), np.random.choice(n2, self.npoints - n2, replace=True)), axis=-1)
+
+            pos1_ = np.copy(pos1)[sample_idx1, :]
+            pos2_ = np.copy(pos2)[sample_idx2, :]
+            flow_ = np.copy(flow)[sample_idx1, :]
+
+        # pack
+        xyz_order = [1, 2, 0]
+        pos1_ = pos1_[:, xyz_order]
+        pos2_ = pos2_[:, xyz_order]
+        flow_ = flow_[:, xyz_order]
+        pc_pair = np.concatenate([pos1_, pos2_], axis=1)
+        data_dict['pcs'] = pc_pair.transpose().astype(np.float32)
+        data_dict['flow_3d'] = flow_.transpose().astype(np.float32)
+
+        # pass camera params for IDS
+        proj_mat = load_calib(os.path.join('datasets/kitti_scene_flow/training/calib_cam_to_cam', '%06d.txt' % index))
+        f, cx, cy = proj_mat[0, 0], proj_mat[0, 2], proj_mat[1, 2]
+        data_dict['intrinsics'] = np.float32([f, cx, cy])  # f, cx, cy
+
+        # adjust domain range according to mean and std
+        data_dict['src_mean'] = np.array([3.8450, -3.6596, 86.1627], dtype=np.float32)  # kitti
+        data_dict['src_std'] = np.array([10.1774,  1.2327, 13.5970], dtype=np.float32)
+        data_dict['dst_mean'] = np.array([0.079332, 1.8988, 91.909], dtype=np.float32)  # things
+        data_dict['dst_std'] = np.array([8.0472,  4.1851, 13.6923], dtype=np.float32)
 
         return data_dict
 
-    def pc_loader(self, path):
-        pc1 = np.load(os.path.join(path, 'pc1.npy'))
-        pc2 = np.load(os.path.join(path, 'pc2.npy'))
-
-        # multiply -1 only for subset datasets
-        pc1[..., -1] *= -1
-        pc2[..., -1] *= -1
-        pc1[..., 0] *= -1
-        pc2[..., 0] *= -1
-
-        return pc1, pc2
+    def __len__(self):
+        return len(self.datapath)
 
 
 class Evaluator:
@@ -66,7 +91,7 @@ class Evaluator:
         self.device = device
 
         logging.info('Loading test set from %s' % self.cfgs.testset.root_dir)
-        self.test_dataset = FlyingThings3DSubsetHPL(self.cfgs.testset)
+        self.test_dataset = KITTIFlowNet3d()
         self.test_loader = utils.FastDataLoader(
             dataset=self.test_dataset,
             batch_size=8,
@@ -88,7 +113,7 @@ class Evaluator:
 
         for inputs in tqdm(self.test_loader):
             inputs = copy_to_device(inputs, self.device)
-
+            
             with torch.cuda.amp.autocast(enabled=False):
                 outputs = self.model.forward(inputs)
 
@@ -104,11 +129,11 @@ class Evaluator:
                 acc3d_relax = torch.logical_or(epe3d_map < 0.1, relative_err < 0.1)
                 outlier = torch.logical_or(epe3d_map > 0.3, relative_err > 0.1)
 
-                metrics_3d['counts'] += epe3d_map.shape[0]
-                metrics_3d['EPE3d'] += epe3d_map.sum().item()
-                metrics_3d['AccS'] += torch.count_nonzero(acc3d_strict).item()
-                metrics_3d['AccR'] += torch.count_nonzero(acc3d_relax).item()
-                metrics_3d['Outlier'] += torch.count_nonzero(outlier).item()
+                metrics_3d['counts'] += 1  # averaged over batch (following FlowNet3D)
+                metrics_3d['EPE3d'] += epe3d_map.sum().item() / epe3d_map.shape[0]
+                metrics_3d['AccS'] += torch.count_nonzero(acc3d_strict).item() / epe3d_map.shape[0]
+                metrics_3d['AccR'] += torch.count_nonzero(acc3d_relax).item() / epe3d_map.shape[0]
+                metrics_3d['Outlier'] += torch.count_nonzero(outlier).item() / epe3d_map.shape[0]
 
         logging.info('#### 3D Metrics ####')
         logging.info('EPE: %.3f' % (metrics_3d['EPE3d'] / metrics_3d['counts']))

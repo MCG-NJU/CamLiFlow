@@ -43,6 +43,12 @@ In this extended version, we instantiate a new type of the bidirectional fusion 
 | CamLiRAFT | Things (80e) | [camliraft_things80e.pt](https://drive.google.com/file/d/1nTh4Mugy5XltjcJHa7Byld2KIQ1IXrbm/view?usp=sharing) | Best generalization performance |
 | CamLiRAFT | Things (150e) | [camliraft_things150e.pt](https://drive.google.com/file/d/1BEuKy5WMbaABW5Wz-Gx879kcNJ2Zla2Z/view?usp=sharing) | Best performance on Things | 
 | CamLiRAFT | Things (150e) -> KITTI (800e) | [camliraft_things150e_kitti800e.pt](https://drive.google.com/file/d/18rBJpy1Bero9dM6HfqKfdZqE4vpU84aD/view?usp=sharing) | Best performance on KITTI |
+| CamLiRAFT-L | Things-Occ (100e) | [camliraft_l_best_things_occ.pt](https://drive.google.com/file/d/1mEpFtI4-lfFqE1X8ZYBiWSPXudn8SCUx/view?usp=share_link) | Best performance on Things-Occ |
+| CamLiRAFT-L | Things-Occ (100e) | [camliraft_l_best_kitti_occ.pt](https://drive.google.com/file/d/1917Lt2iDSL7DqvnOwR0PEsYX8XEabRCJ/view?usp=share_link) | Best generalization performance on KITTI-Occ |
+| CamLiRAFT-L | Things-Noc (100e) | [camliraft_l_best_things_noc.pt](https://drive.google.com/file/d/1zOO2eOclkfsqXSRkoO4716dM6nEHZXk2/view?usp=share_link) | Best performance on Things-Noc |
+| CamLiRAFT-L | Things-Noc (100e) | [camliraft_l_best_kitti_noc.pt](https://drive.google.com/file/d/1aiqnwCWibN5InvSGAncYDFe0XQPDYbox/view?usp=share_link) | Best generalization performance on KITTI-Noc |
+
+> Things-Occ means "occluded FlyingThings3D" and Things-Noc means "non-occluded FlyingThings3D". Same for KITTI-Occ and KITTI-Noc.
 
 ## Precomputed Results
 
@@ -106,7 +112,7 @@ python demo.py --model camliraft --weights /path/to/camliraft/checkpoint.pt
 
 Note that CamLiRAFT is not very robust to objects at a greater distance, as the network has only been trained on data with a depth of less than 35m. If you are getting bad results on your own data, try scaling the depth of the point cloud to a range of 5 ~ 35m.
 
-## Evaluation
+## Evaluate CamLiFlow and CamLiRAFT
 
 ### FlyingThings3D
 
@@ -202,6 +208,30 @@ Now you can reproduce the results in Table 4 (see the extended paper):
 
 ```
 python eval_sintel.py testset=sintel model=camliraft ckpt.path=checkpoints/camliraft_things80e.pt
+```
+
+## Evaluate CamLiRAFT-L
+
+### FlyingThings3D
+
+There are two different ways of data preprocessing. The first setting is the one proposed by HPLFlowNet, which only keeps non-occluded points during the preprocessing. The second setting, proposed by FlowNet3D, remains the occluded points.
+
+```
+# Non-occluded
+python eval_things_noc_sf.py testset=flyingthings3d_subset_hpl model=camlipwc_l ckpt.path=checkpoints/camliraft_l_best_things_noc.pt
+# Occluded
+python eval_things_occ_sf.py testset=flyingthings3d_subset_flownet3d model=camliraft_l ckpt.path=checkpoints/camliraft_l_best_things_occ.pt
+```
+
+### KITTI
+
+Same with FlyingThings3D, there are two different ways of data preprocessing. We report results on both settings.
+
+```
+# Non-occluded
+python eval_kitti_noc_sf.py testset=kitti model=camliraft_l ckpt.path=checkpoints/camliraft_l_best_kitti_noc.pt
+# Occluded
+python eval_kitti_occ_sf.py testset=kitti model=camliraft_l ckpt.path=checkpoints/camliraft_l_best_kitti_occ.pt
 ```
 
 ## Training
